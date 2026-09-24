@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RailSwap - Join Journey</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ================= HEADER ================= -->
+
+    <header>
+
+        <div class="logo">
+            🚆 RailSwap
+        </div>
+
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </nav>
+
+    </header>
+
+
+    <!-- ================= MAIN ================= -->
+
+    <main>
+
+        <section class="hero">
+
+            <h1>Join Your Journey</h1>
+
+            <p>
+                Enter your journey and seat details to find
+                passengers interested in seat swapping.
+            </p>
+
+
+            <!-- ================= FORM ================= -->
+
+            <form id="journeyForm">
+
+
+                <!-- JOURNEY DETAILS -->
+
+                <h2>🚆 Journey Details</h2>
+
+                <input
+                    type="text"
+                    id="train_number"
+                    placeholder="Train Number"
+                    required
+                >
+
+                <input
+                    type="date"
+                    id="journey_date"
+                    required
+                >
+
+                <input
+                    type="text"
+                    id="source"
+                    placeholder="Source Station"
+                    required
+                >
+
+                <input
+                    type="text"
+                    id="destination"
+                    placeholder="Destination Station"
+                    required
+                >
+
+
+                <!-- SEAT DETAILS -->
+
+                <h2>💺 Seat Details</h2>
+
+                <input
+                    type="text"
+                    id="coach_number"
+                    placeholder="Coach Number (e.g. S5)"
+                    required
+                >
+
+                <input
+                    type="number"
+                    id="seat_number"
+                    placeholder="Seat Number"
+                    min="1"
+                    required
+                >
+
+
+                <!-- CURRENT BERTH -->
+
+                <label for="current_berth">
+                    Current Berth
+                </label>
+
+                <select id="current_berth" required>
+
+                    <option value="">
+                        Select Current Berth
+                    </option>
+
+                    <option value="Lower">
+                        Lower
+                    </option>
+
+                    <option value="Middle">
+                        Middle
+                    </option>
+
+                    <option value="Upper">
+                        Upper
+                    </option>
+
+                    <option value="Side Lower">
+                        Side Lower
+                    </option>
+
+                    <option value="Side Upper">
+                        Side Upper
+                    </option>
+
+                </select>
+
+
+                <!-- DESIRED BERTH -->
+
+                <label for="desired_berth">
+                    Desired Berth
+                </label>
+
+                <select id="desired_berth" required>
+
+                    <option value="">
+                        Select Desired Berth
+                    </option>
+
+                    <option value="Lower">
+                        Lower
+                    </option>
+
+                    <option value="Middle">
+                        Middle
+                    </option>
+
+                    <option value="Upper">
+                        Upper
+                    </option>
+
+                    <option value="Side Lower">
+                        Side Lower
+                    </option>
+
+                    <option value="Side Upper">
+                        Side Upper
+                    </option>
+
+                </select>
+
+
+                <!-- SUBMIT -->
+
+                <button type="submit">
+                    🚆 Join Journey
+                </button>
+
+            </form>
+
+
+            <!-- MESSAGE -->
+
+            <p id="message"></p>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================= JAVASCRIPT ================= -->
+
+    <script>
+
+        // ==========================================
+        // CHECK LOGIN
+        // ==========================================
+
+        const userId = localStorage.getItem("user_id");
+
+        if (!userId) {
+
+            window.location.href = "login.html";
+
+        }
+
+
+        // ==========================================
+        // JOURNEY FORM
+        // ==========================================
+
+        const journeyForm =
+            document.getElementById("journeyForm");
+
+
+        journeyForm.addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+
+            // Get form values
+
+            const trainNumber =
+                document.getElementById("train_number").value;
+
+            const journeyDate =
+                document.getElementById("journey_date").value;
+
+            const source =
+                document.getElementById("source").value;
+
+            const destination =
+                document.getElementById("destination").value;
+
+            const coachNumber =
+                document.getElementById("coach_number").value;
+
+            const seatNumber =
+                document.getElementById("seat_number").value;
+
+            const currentBerth =
+                document.getElementById("current_berth").value;
+
+            const desiredBerth =
+                document.getElementById("desired_berth").value;
+
+            const message =
+                document.getElementById("message");
+
+
+            // ==========================================
+            // SEND DATA TO BACKEND
+            // ==========================================
+
+            try {
+
+                const response = await fetch(
+                    "http://localhost:3000/api/journeys/join",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            user_id: userId,
+
+                            train_number: trainNumber,
+
+                            journey_date: journeyDate,
+
+                            source: source,
+
+                            destination: destination,
+
+                            coach_number: coachNumber,
+
+                            seat_number: seatNumber,
+
+                            current_berth: currentBerth,
+
+                            desired_berth: desiredBerth
+
+                        })
+
+                    }
+                );
+
+
+                const data = await response.json();
+
+
+                // ==========================================
+                // SUCCESS
+                // ==========================================
+
+                if (response.ok) {
+
+                    message.textContent =
+                        "✅ " + data.message;
+
+                    journeyForm.reset();
+
+                }
+
+
+                // ==========================================
+                // ERROR
+                // ==========================================
+
+                else {
+
+                    message.textContent =
+                        "❌ " + data.message;
+
+                }
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                message.textContent =
+                    "❌ Unable to connect to RailSwap server.";
+
+            }
+
+        });
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        document.getElementById("logoutBtn")
+            .addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("name");
+                localStorage.removeItem("email");
+
+                window.location.href = "login.html";
+
+            });
+
+    </script>
+
+</body>
+
+</html>

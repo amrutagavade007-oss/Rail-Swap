@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RailSwap - Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+
+        <div class="logo">
+            🚆 RailSwap
+        </div>
+
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </nav>
+
+    </header>
+
+
+    <!-- Dashboard -->
+    <main>
+
+        <section class="hero">
+
+            <h1>Welcome, <span id="userName">User</span>!</h1>
+
+            <p>
+                Manage your journey and find suitable seat swap opportunities.
+            </p>
+
+
+            <!-- Dashboard Options -->
+
+            <div class="dashboard-container">
+
+                <div class="dashboard-card">
+
+                    <h2>🚆 Join a Journey</h2>
+
+                    <p>
+                        Enter your train, journey and seat details.
+                    </p>
+
+                    <button id="joinJourneyBtn">
+                        Join Journey
+                    </button>
+
+                </div>
+
+
+                <div class="dashboard-card">
+
+                    <h2>👤 My Journey</h2>
+
+                    <p>
+                        View your current journey and seat information.
+                    </p>
+
+                    <button id="myJourneyBtn">
+                        My Journey
+                    </button>
+
+                </div>
+
+
+                <div class="dashboard-card">
+
+                    <h2>🔄 Swap Requests</h2>
+
+                    <p>
+                        View and manage your seat swap requests.
+                    </p>
+
+                    <button id="swapRequestsBtn">
+                        Swap Requests
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        // Get logged-in user's name
+        const userName = localStorage.getItem("name");
+
+        // If user is not logged in, return to login page
+        if (!userName) {
+
+            window.location.href = "login.html";
+
+        } else {
+
+            document.getElementById("userName").textContent = userName;
+
+        }
+
+
+        // Join Journey button
+        document.getElementById("joinJourneyBtn")
+            .addEventListener("click", function () {
+
+                window.location.href = "join-journey.html";
+
+            });
+
+
+        // My Journey button
+        document.getElementById("myJourneyBtn")
+            .addEventListener("click", function () {
+
+                alert("My Journey module is under development.");
+
+            });
+
+
+        // Swap Requests button
+        document.getElementById("swapRequestsBtn")
+            .addEventListener("click", function () {
+
+                alert("Swap Requests module is under development.");
+
+            });
+
+
+        // Logout
+        document.getElementById("logoutBtn")
+            .addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("name");
+                localStorage.removeItem("email");
+
+                window.location.href = "login.html";
+
+            });
+
+    </script>
+
+</body>
+
+</html>
