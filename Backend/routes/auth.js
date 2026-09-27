@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
 
         // Insert user
         const [result] = await pool.query(
-            `INSERT INTO users (name, email, password_hash)
+            `INSERT INTO users (name, email, password)
              VALUES (?, ?, ?)`,
             [name, email, passwordHash]
         );
@@ -76,7 +76,7 @@ router.post("/login", async (req, res) => {
 
         const passwordMatch = await bcrypt.compare(
             password,
-            user.password_hash
+            user.password
         );
 
         if (!passwordMatch) {

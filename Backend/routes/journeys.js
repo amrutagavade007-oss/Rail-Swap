@@ -2,14 +2,11 @@ const express = require("express");
 const pool = require("../config/db");
 
 const router = express.Router();
-
-
 // ==========================================
 // JOIN JOURNEY
 // ==========================================
 
 router.post("/join", async (req, res) => {
-
     try {
 
         const {
@@ -25,7 +22,10 @@ router.post("/join", async (req, res) => {
         } = req.body;
 
 
-        // Check required fields
+        // ==========================================
+        // VALIDATE REQUIRED FIELDS
+        // ==========================================
+
         if (
             !user_id ||
             !train_number ||
@@ -37,11 +37,9 @@ router.post("/join", async (req, res) => {
             !current_berth ||
             !desired_berth
         ) {
-
             return res.status(400).json({
                 message: "All fields are required"
             });
-
         }
 
 
@@ -51,8 +49,32 @@ router.post("/join", async (req, res) => {
 
         const journey_id =
             `${train_number}_${journey_date}_${source}_${destination}`
-            .replace(/\s+/g, "_")
-            .toLowerCase();
+                .replace(/\s+/g, "_")
+                .toLowerCase();
+
+
+        // ==========================================
+        // CHECK IF USER ALREADY JOINED THIS JOURNEY
+        // ==========================================
+
+        const [existingPassenger] = await pool.query(
+            `SELECT passenger_id
+             FROM passengers
+             WHERE user_id = ?
+             AND journey_id = ?`,
+            [user_id, journey_id]
+        );
+
+
+        // ==========================================
+        // STOP DUPLICATE JOIN
+        // ==========================================
+
+        if (existingPassenger.length > 0) {
+            return res.status(409).json({
+                message: "You have already joined this journey."
+            });
+        }
 
 
         // ==========================================
@@ -60,7 +82,9 @@ router.post("/join", async (req, res) => {
         // ==========================================
 
         const [existingJourney] = await pool.query(
-            "SELECT journey_id FROM journeys WHERE journey_id = ?",
+            `SELECT journey_id
+             FROM journeys
+             WHERE journey_id = ?`,
             [journey_id]
         );
 
@@ -73,14 +97,30 @@ router.post("/join", async (req, res) => {
 
             await pool.query(
                 `INSERT INTO journeys
-                (journey_id, train_number, journey_date, source, destination)
-                VALUES (?, ?, ?, ?, ?)`,
-                [
+                (
                     journey_id,
+                    user_id,
                     train_number,
                     journey_date,
                     source,
-                    destination
+                    destination,
+                    coach,
+                    seat_number,
+                    current_berth,
+                    preferred_berth
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    journey_id,
+                    user_id,
+                    train_number,
+                    journey_date,
+                    source,
+                    destination,
+                    coach_number,
+                    seat_number,
+                    current_berth,
+                    desired_berth
                 ]
             );
 
@@ -91,7 +131,7 @@ router.post("/join", async (req, res) => {
         // ADD PASSENGER
         // ==========================================
 
-        const [result] = await pool.query(
+        await pool.query(
             `INSERT INTO passengers
             (
                 user_id,
@@ -111,16 +151,17 @@ router.post("/join", async (req, res) => {
                 desired_berth
             ]
         );
+
+
+        // ==========================================
         // SUCCESS RESPONSE
+        // ==========================================
+
         res.status(201).json({
-
             message: "Journey joined successfully",
-
-            passenger_id: result.insertId,
-
             journey_id: journey_id
-
         });
+
 
     } catch (error) {
 
@@ -131,8 +172,8 @@ router.post("/join", async (req, res) => {
         });
 
     }
-
 });
+
 
 // GET MY JOURNEY
 router.get("/my/:user_id", async (req, res) => {
@@ -695,6 +736,47 @@ router.post("/requests/reject/:request_id", async (req, res) => {
 
     } catch (error) {
         console.error("Reject swap request error:", error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+});
+
+// GET ALL USERS' JOURNEY DETAILS
+router.get("/all", async (req, res) => {
+    try {
+        const [journeys] = await pool.query(
+            `SELECT
+                p.passenger_id,
+                u.user_id,
+                u.name,
+                u.email,
+                p.journey_id,
+                p.coach_number,
+                p.seat_number,
+                p.current_berth,
+                p.desired_berth,
+                j.train_number,
+                j.journey_date,
+                j.source,
+                j.destination,
+                p.created_at
+             FROM passengers p
+             JOIN users u
+                ON p.user_id = u.user_id
+             JOIN journeys j
+                ON p.journey_id = j.journey_id
+             ORDER BY p.created_at DESC`
+        );
+
+        res.json({
+            message: "All journey details found",
+            journeys: journeys
+        });
+
+    } catch (error) {
+        console.error("Get all journeys error:", error);
 
         res.status(500).json({
             message: "Server error"
