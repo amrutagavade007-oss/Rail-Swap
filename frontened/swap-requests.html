@@ -41,12 +41,21 @@
             </p>
 
 
+            <!-- RECEIVED REQUESTS SECTION -->
             <div id="requestsContainer">
 
                 <p id="message">
                     Loading requests...
                 </p>
 
+            </div>
+
+            <br><hr><br>
+
+            <!-- 📤 SENT REQUESTS SECTION (FIXED HTML) -->
+            <h2>📤 Sent Swap Requests</h2>
+            <div id="sentRequestsContainer">
+                <p id="sentMessage">Loading sent requests...</p>
             </div>
 
         </section>
@@ -69,11 +78,20 @@
         }
 
 
+        // RECEIVED REQUESTS DOM ELEMENTS
         const requestsContainer =
             document.getElementById("requestsContainer");
 
         const message =
             document.getElementById("message");
+
+
+        // SENT REQUESTS DOM ELEMENTS (FIXED - MOVED INSIDE SCRIPT)
+        const sentRequestsContainer = 
+            document.getElementById("sentRequestsContainer");
+
+        const sentMessage = 
+            document.getElementById("sentMessage");
 
 
         // ==========================================
@@ -183,15 +201,13 @@
 
                         acceptButton.textContent =
                             "✅ Accept";
-
-
+                        acceptButton.className = "btn-accept";
                         const rejectButton =
                             document.createElement("button");
 
                         rejectButton.textContent =
                             "❌ Reject";
-
-
+                        rejectButton.className = "btn-reject"; 
                         // Accept
                         acceptButton.addEventListener(
                             "click",
@@ -287,6 +303,7 @@
 
                     // Reload requests
                     loadRequests();
+                    loadSentRequests();
 
                 }
 
@@ -353,6 +370,7 @@
 
                     // Reload requests
                     loadRequests();
+                    loadSentRequests();
 
                 }
 
@@ -379,8 +397,96 @@
         }
 
 
-        // Load requests
+        // ==========================================
+        // LOAD SENT REQUESTS (OUTGOING)
+        // ==========================================
+
+        // Inside frontened/swap-requests.html -> inside <script> tag -> inside loadSentRequests() function
+
+async function loadSentRequests() {
+
+    try {
+
+        const response = await fetch(
+            `http://localhost:3000/api/journeys/requests/sent/${userId}`
+        );
+
+        const data = await response.json();
+        
+
+                if (!response.ok) {
+
+                    if (sentMessage) {
+                        sentMessage.textContent =
+                            "❌ " + (data.message || "Failed to load sent requests.");
+                    }
+
+                    return;
+
+                }
+
+                if (!data.requests || data.requests.length === 0) {
+
+                    sentRequestsContainer.innerHTML = `
+
+                        <div class="dashboard-card">
+
+                            <h2>📭 No Sent Swap Requests</h2>
+
+                            <p>You have not sent any swap requests yet.</p>
+
+                        </div>
+
+                    `;
+
+                    return;
+
+                }
+
+                sentRequestsContainer.innerHTML = "";
+
+                data.requests.forEach(function (request) {
+
+                    const card = document.createElement("div");
+
+                    card.className = "dashboard-card";
+
+                   const statusBadge = `<span class="status-badge status-${request.status.toLowerCase()}">${request.status}</span>`;
+
+                    card.innerHTML = `
+
+                        <h2>📤 Request Sent to ${request.receiver_name}</h2>
+
+                        <p><strong>Target Seat:</strong> Coach ${request.receiver_coach}, Seat ${request.receiver_seat} (${request.receiver_berth})</p>
+
+                        <p><strong>Status:</strong> ${statusBadge}</p>
+
+                    `;
+
+                    sentRequestsContainer.appendChild(card);
+
+                });
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                if (sentMessage) {
+                    sentMessage.textContent =
+                        "❌ Unable to fetch sent requests.";
+                }
+
+            }
+
+        }
+
+
+        // Initial calls when page loads
         loadRequests();
+
+        loadSentRequests();
 
 
         // ==========================================
