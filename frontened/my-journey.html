@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RailSwap - My Journey</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+
+        <div class="logo">
+            🚆 RailSwap
+        </div>
+
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </nav>
+
+    </header>
+
+
+    <!-- Main -->
+    <main>
+
+        <section class="hero">
+
+            <h1>My Journey</h1>
+
+            <p>
+                View your journey and current seat information.
+            </p>
+
+
+            <!-- Journey Details -->
+            <div id="journeyContainer">
+
+                <p id="message">Loading journey...</p>
+
+            </div>
+
+
+            <!-- Find Matches Button -->
+            <button id="findMatchesBtn">
+                🔍 Find Compatible Passengers
+            </button>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        // Get logged-in user
+        const userId = localStorage.getItem("user_id");
+
+        // If user is not logged in
+        if (!userId) {
+
+            window.location.href = "login.html";
+
+        }
+
+
+        const journeyContainer =
+            document.getElementById("journeyContainer");
+
+        const message =
+            document.getElementById("message");
+
+
+        // ==========================================
+        // GET MY JOURNEY
+        // ==========================================
+
+        async function loadJourney() {
+
+            try {
+
+                const response = await fetch(
+                    `http://localhost:3000/api/journeys/my/${userId}`
+                );
+
+                const data = await response.json();
+
+
+                if (!response.ok) {
+
+                    message.textContent =
+                        "❌ " + data.message;
+
+                    return;
+                }
+
+
+                const journey = data.journey;
+
+
+                // Display journey
+                journeyContainer.innerHTML = `
+
+                    <div class="dashboard-card">
+
+                        <h2>🚆 Journey Details</h2>
+
+                        <p>
+                            <strong>Train Number:</strong>
+                            ${journey.train_number}
+                        </p>
+
+                        <p>
+                            <strong>Journey Date:</strong>
+                            ${journey.journey_date}
+                        </p>
+
+                        <p>
+                            <strong>From:</strong>
+                            ${journey.source}
+                        </p>
+
+                        <p>
+                            <strong>To:</strong>
+                            ${journey.destination}
+                        </p>
+
+                        <h2>💺 Seat Details</h2>
+
+                        <p>
+                            <strong>Coach:</strong>
+                            ${journey.coach_number}
+                        </p>
+
+                        <p>
+                            <strong>Seat Number:</strong>
+                            ${journey.seat_number}
+                        </p>
+
+                        <p>
+                            <strong>Current Berth:</strong>
+                            ${journey.current_berth}
+                        </p>
+
+                        <p>
+                            <strong>Desired Berth:</strong>
+                            ${journey.desired_berth}
+                        </p>
+
+                    </div>
+
+                `;
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                message.textContent =
+                    "❌ Unable to connect to RailSwap server.";
+
+            }
+
+        }
+
+
+        // Load journey when page opens
+        loadJourney();
+
+
+        // ==========================================
+        // FIND MATCHES
+        // ==========================================
+
+        document.getElementById("findMatchesBtn")
+            .addEventListener("click", function () {
+
+                window.location.href = "matches.html";
+
+            });
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        document.getElementById("logoutBtn")
+            .addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("name");
+                localStorage.removeItem("email");
+
+                window.location.href = "login.html";
+
+            });
+
+    </script>
+
+</body>
+
+</html>

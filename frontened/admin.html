@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RailSwap Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>RailSwap Admin Dashboard</h1>
+
+        <div>
+            <button onclick="window.location.href='dashboard.html'">
+                Dashboard
+            </button>
+
+            <button onclick="logout()">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <main>
+
+        <h2>All Passenger Journey Details</h2>
+
+        <p id="message"></p>
+
+        <div class="table-container">
+
+            <table id="journeyTable">
+
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Train</th>
+                        <th>Date</th>
+                        <th>Source</th>
+                        <th>Destination</th>
+                        <th>Coach</th>
+                        <th>Seat</th>
+                        <th>Current Berth</th>
+                        <th>Desired Berth</th>
+                    </tr>
+                </thead>
+
+                <tbody id="journeyTableBody">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        async function loadAllJourneys() {
+
+            const message = document.getElementById("message");
+            const tableBody = document.getElementById("journeyTableBody");
+
+            try {
+
+                const response = await fetch(
+                    "http://localhost:3000/api/journeys/all"
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    message.textContent = data.message || "Unable to load data.";
+                    return;
+                }
+
+                if (!data.journeys || data.journeys.length === 0) {
+                    message.textContent = "No passenger journey data found.";
+                    return;
+                }
+
+                tableBody.innerHTML = "";
+
+                data.journeys.forEach(function(journey) {
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${journey.user_id}</td>
+                        <td>${journey.name}</td>
+                        <td>${journey.email}</td>
+                        <td>${journey.train_number}</td>
+                        <td>${new Date(journey.journey_date).toLocaleDateString()}</td>
+                        <td>${journey.source}</td>
+                        <td>${journey.destination}</td>
+                        <td>${journey.coach_number}</td>
+                        <td>${journey.seat_number}</td>
+                        <td>${journey.current_berth}</td>
+                        <td>${journey.desired_berth}</td>
+                    `;
+
+                    tableBody.appendChild(row);
+
+                });
+
+            } catch (error) {
+
+                console.error(error);
+
+                message.textContent =
+                    "Unable to connect to RailSwap server.";
+
+            }
+        }
+
+
+        function logout() {
+
+            localStorage.removeItem("user_id");
+            localStorage.removeItem("name");
+            localStorage.removeItem("email");
+
+            window.location.href = "login.html";
+        }
+
+
+        loadAllJourneys();
+
+    </script>
+
+</body>
+</html>

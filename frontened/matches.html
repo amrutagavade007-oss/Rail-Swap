@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RailSwap - Find Matches</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+
+        <div class="logo">
+            🚆 RailSwap
+        </div>
+
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="my-journey.html">My Journey</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </nav>
+
+    </header>
+
+
+    <!-- Main -->
+    <main>
+
+        <section class="hero">
+
+            <h1>Find Compatible Passengers</h1>
+
+            <p>
+                Passengers with compatible seat swap preferences
+                are shown below.
+            </p>
+
+
+            <div id="matchesContainer">
+
+                <p id="message">
+                    Searching for compatible passengers...
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        // ==========================================
+        // GET LOGGED-IN USER
+        // ==========================================
+
+        const userId = localStorage.getItem("user_id");
+
+        if (!userId) {
+
+            window.location.href = "login.html";
+
+        }
+
+
+        const matchesContainer =
+            document.getElementById("matchesContainer");
+
+        const message =
+            document.getElementById("message");
+
+
+        let myPassengerId = null;
+
+
+        // ==========================================
+        // LOAD MY JOURNEY
+        // ==========================================
+
+        async function loadMyJourney() {
+
+            try {
+
+                const response = await fetch(
+                    `http://localhost:3000/api/journeys/my/${userId}`
+                );
+
+                const data = await response.json();
+
+
+                if (!response.ok) {
+
+                    message.textContent =
+                        "❌ " + data.message;
+
+                    return false;
+                }
+
+
+                // We need our passenger_id
+                myPassengerId =
+                    data.journey.passenger_id;
+
+                return true;
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                message.textContent =
+                    "❌ Unable to load your journey.";
+
+                return false;
+
+            }
+
+        }
+
+
+        // ==========================================
+        // LOAD MATCHES
+        // ==========================================
+
+        async function loadMatches() {
+
+            try {
+
+                const response = await fetch(
+                    `http://localhost:3000/api/journeys/matches/${userId}`
+                );
+
+                const data = await response.json();
+
+
+                if (!response.ok) {
+
+                    message.textContent =
+                        "❌ " + data.message;
+
+                    return;
+                }
+
+
+                // No matches
+                if (
+                    !data.matches ||
+                    data.matches.length === 0
+                ) {
+
+                    matchesContainer.innerHTML = `
+
+                        <div class="dashboard-card">
+
+                            <h2>😔 No Matches Found</h2>
+
+                            <p>
+                                No compatible passengers were
+                                found for your journey.
+                            </p>
+
+                        </div>
+
+                    `;
+
+                    return;
+                }
+
+
+                // Clear loading message
+                matchesContainer.innerHTML = "";
+
+
+                // Display every match
+                data.matches.forEach(function (match) {
+
+                    const card =
+                        document.createElement("div");
+
+                    card.className =
+                        "dashboard-card";
+
+
+                    card.innerHTML = `
+
+                        <h2>👤 ${match.name}</h2>
+
+                        <p>
+                            <strong>Coach:</strong>
+                            ${match.coach_number}
+                        </p>
+
+                        <p>
+                            <strong>Seat:</strong>
+                            ${match.seat_number}
+                        </p>
+
+                        <p>
+                            <strong>Current Berth:</strong>
+                            ${match.current_berth}
+                        </p>
+
+                        <p>
+                            <strong>Desired Berth:</strong>
+                            ${match.desired_berth}
+                        </p>
+
+                        <button class="requestSwapBtn">
+                            🔄 Request Swap
+                        </button>
+
+                    `;
+
+
+                    // Get button
+                    const button =
+                        card.querySelector(
+                            ".requestSwapBtn"
+                        );
+
+
+                    // Request swap
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            sendSwapRequest(match);
+
+                        }
+                    );
+
+
+                    matchesContainer.appendChild(card);
+
+                });
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                message.textContent =
+                    "❌ Unable to connect to RailSwap server.";
+
+            }
+
+        }
+
+
+        // ==========================================
+        // SEND SWAP REQUEST
+        // ==========================================
+
+        async function sendSwapRequest(match) {
+
+            try {
+
+                const response = await fetch(
+                    "http://localhost:3000/api/journeys/swap-request",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            sender_id: userId,
+
+                            receiver_id: match.user_id,
+
+                            sender_passenger_id:
+                                myPassengerId,
+
+                            receiver_passenger_id:
+                                match.passenger_id
+
+                        })
+
+                    }
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (response.ok) {
+
+                    alert(
+                        "✅ " + data.message
+                    );
+
+                }
+
+                else {
+
+                    alert(
+                        "❌ " + data.message
+                    );
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "❌ Unable to connect to server."
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // START
+        // ==========================================
+
+        async function startPage() {
+
+            const journeyLoaded =
+                await loadMyJourney();
+
+
+            if (journeyLoaded) {
+
+                await loadMatches();
+
+            }
+
+        }
+
+
+        startPage();
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        document.getElementById("logoutBtn")
+            .addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("name");
+                localStorage.removeItem("email");
+
+                window.location.href = "login.html";
+
+            });
+
+    </script>
+
+</body>
+
+</html>

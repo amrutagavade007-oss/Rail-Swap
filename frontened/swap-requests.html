@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RailSwap - Swap Requests</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+
+        <div class="logo">
+            🚆 RailSwap
+        </div>
+
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="my-journey.html">My Journey</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </nav>
+
+    </header>
+
+
+    <!-- Main -->
+    <main>
+
+        <section class="hero">
+
+            <h1>Swap Requests</h1>
+
+            <p>
+                View and manage requests received from
+                other passengers.
+            </p>
+
+
+            <div id="requestsContainer">
+
+                <p id="message">
+                    Loading requests...
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        // ==========================================
+        // GET LOGGED-IN USER
+        // ==========================================
+
+        const userId = localStorage.getItem("user_id");
+
+        if (!userId) {
+
+            window.location.href = "login.html";
+
+        }
+
+
+        const requestsContainer =
+            document.getElementById("requestsContainer");
+
+        const message =
+            document.getElementById("message");
+
+
+        // ==========================================
+        // LOAD RECEIVED REQUESTS
+        // ==========================================
+
+        async function loadRequests() {
+
+            try {
+
+                const response = await fetch(
+                    `http://localhost:3000/api/journeys/requests/received/${userId}`
+                );
+
+                const data = await response.json();
+
+
+                if (!response.ok) {
+
+                    message.textContent =
+                        "❌ " + data.message;
+
+                    return;
+                }
+
+
+                // No requests
+                if (
+                    !data.requests ||
+                    data.requests.length === 0
+                ) {
+
+                    requestsContainer.innerHTML = `
+
+                        <div class="dashboard-card">
+
+                            <h2>📭 No Swap Requests</h2>
+
+                            <p>
+                                You have not received any
+                                swap requests.
+                            </p>
+
+                        </div>
+
+                    `;
+
+                    return;
+                }
+
+
+                // Clear loading message
+                requestsContainer.innerHTML = "";
+
+
+                // Display requests
+                data.requests.forEach(function (request) {
+
+                    const card =
+                        document.createElement("div");
+
+                    card.className =
+                        "dashboard-card";
+
+
+                    card.innerHTML = `
+
+                        <h2>
+                            🔄 Swap Request
+                        </h2>
+
+                        <p>
+                            <strong>
+                                ${request.sender_name}
+                            </strong>
+                            wants to swap seats with you.
+                        </p>
+
+                        <p>
+                            <strong>Sender Seat:</strong>
+                            ${request.sender_seat}
+                        </p>
+
+                        <p>
+                            <strong>Sender Berth:</strong>
+                            ${request.sender_berth}
+                        </p>
+
+                        <p>
+                            <strong>Sender Desired Berth:</strong>
+                            ${request.sender_desired_berth}
+                        </p>
+
+                        <p>
+                            <strong>Status:</strong>
+                            ${request.status}
+                        </p>
+
+                    `;
+
+
+                    // Only show buttons for Pending requests
+                    if (request.status === "Pending") {
+
+                        const acceptButton =
+                            document.createElement("button");
+
+                        acceptButton.textContent =
+                            "✅ Accept";
+
+
+                        const rejectButton =
+                            document.createElement("button");
+
+                        rejectButton.textContent =
+                            "❌ Reject";
+
+
+                        // Accept
+                        acceptButton.addEventListener(
+                            "click",
+                            function () {
+
+                                acceptRequest(
+                                    request.request_id
+                                );
+
+                            }
+                        );
+
+
+                        // Reject
+                        rejectButton.addEventListener(
+                            "click",
+                            function () {
+
+                                rejectRequest(
+                                    request.request_id
+                                );
+
+                            }
+                        );
+
+
+                        card.appendChild(
+                            acceptButton
+                        );
+
+                        card.appendChild(
+                            rejectButton
+                        );
+
+                    }
+
+
+                    requestsContainer.appendChild(card);
+
+                });
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                message.textContent =
+                    "❌ Unable to connect to RailSwap server.";
+
+            }
+
+        }
+
+
+        // ==========================================
+        // ACCEPT REQUEST
+        // ==========================================
+
+        async function acceptRequest(requestId) {
+
+            try {
+
+                const response = await fetch(
+                    `http://localhost:3000/api/journeys/requests/accept/${requestId}`,
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            user_id: userId
+
+                        })
+
+                    }
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (response.ok) {
+
+                    alert(
+                        "✅ " + data.message
+                    );
+
+                    // Reload requests
+                    loadRequests();
+
+                }
+
+                else {
+
+                    alert(
+                        "❌ " + data.message
+                    );
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "❌ Unable to connect to server."
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // REJECT REQUEST
+        // ==========================================
+
+        async function rejectRequest(requestId) {
+
+            try {
+
+                const response = await fetch(
+                    `http://localhost:3000/api/journeys/requests/reject/${requestId}`,
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            user_id: userId
+
+                        })
+
+                    }
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (response.ok) {
+
+                    alert(
+                        "✅ " + data.message
+                    );
+
+                    // Reload requests
+                    loadRequests();
+
+                }
+
+                else {
+
+                    alert(
+                        "❌ " + data.message
+                    );
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "❌ Unable to connect to server."
+                );
+
+            }
+
+        }
+
+
+        // Load requests
+        loadRequests();
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        document.getElementById("logoutBtn")
+            .addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("name");
+                localStorage.removeItem("email");
+
+                window.location.href = "login.html";
+
+            });
+
+    </script>
+
+</body>
+
+</html>
