@@ -783,4 +783,22 @@ router.get("/all", async (req, res) => {
         });
     }
 });
+///hi
+router.get("/requests/sent/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const [requests] = await db.execute(
+            `SELECT sr.id AS request_id, sr.status, u.name AS receiver_name, 
+                    j.coach AS receiver_coach, j.seat_number AS receiver_seat, j.current_berth AS receiver_berth
+             FROM swap_requests sr
+             JOIN users u ON sr.receiver_id = u.id
+             JOIN journeys j ON sr.receiver_journey_id = j.id
+             WHERE sr.sender_id = ?`,
+            [user_id]
+        );
+        res.json({ requests });
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching sent requests" });
+    }
+});
 module.exports = router;
